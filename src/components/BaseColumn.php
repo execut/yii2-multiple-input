@@ -503,6 +503,9 @@ abstract class BaseColumn extends Object
         $encode = !isset($options['encode']) || $options['encode'] !== false;
         unset($options['tag'], $options['encode']);
 
+        $error = $this->convertErrorToArray($error);
+        $error = implode("<br>", $error);
+
         return Html::tag($tag, $encode ? Html::encode($error) : $error, $options);
     }
 
@@ -511,4 +514,26 @@ abstract class BaseColumn extends Object
      * @return mixed
      */
     abstract public function getFirstError($index);
+
+    /**
+     * @param $error
+     * @return string
+     */
+    protected function convertErrorToArray($error)
+    {
+        if (is_array($error)) {
+            $result = [];
+            foreach ($error as $er) {
+                if (is_array($er)) {
+                    $result = array_merge($result, $this->convertErrorToArray($er));
+                } else {
+                    $result[] = $er;
+                }
+            }
+
+            return $result;
+        }
+
+        return [$error];
+    }
 }

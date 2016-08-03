@@ -32,9 +32,9 @@ class MultipleInputColumn extends BaseColumn
     {
         parent::init();
 
-        if ($this->enableError && !$this->context->model instanceof Model) {
-            throw new InvalidConfigException('Property "enableError" available only when model is defined.');
-        }
+//        if ($this->enableError && !$this->context->model instanceof Model) {
+//            throw new InvalidConfigException('Property "enableError" available only when model is defined.');
+//        }
     }
 
     /**
