@@ -1,10 +1,10 @@
 <?php
 
 use yii\bootstrap\ActiveForm;
-use unclead\widgets\TabularInput;
+use unclead\multipleinput\TabularInput;
 use yii\helpers\Html;
-use unclead\widgets\examples\models\Item;
-use unclead\widgets\TabularColumn;
+use unclead\multipleinput\examples\models\Item;
+use unclead\multipleinput\TabularColumn;
 
 
 /* @var $this \yii\web\View */
@@ -27,6 +27,7 @@ use unclead\widgets\TabularColumn;
         'validateOnSubmit' => true,
         'validateOnBlur' => false,
     ],
+    'form' => $form,
     'columns' => [
         [
             'name' => 'id',
@@ -36,6 +37,11 @@ use unclead\widgets\TabularColumn;
             'name' => 'title',
             'title' => 'Title',
             'type' => TabularColumn::TYPE_TEXT_INPUT,
+            'attributeOptions' => [
+                'enableClientValidation' => true,
+                'validateOnChange' => true,
+            ],
+            'defaultValue' => 'Test',
             'enableError' => true
         ],
         [

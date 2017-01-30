@@ -1,10 +1,10 @@
 <?php
 
 use yii\bootstrap\ActiveForm;
-use unclead\widgets\MultipleInput;
-use unclead\widgets\examples\models\ExampleModel;
+use unclead\multipleinput\MultipleInput;
+use unclead\multipleinput\examples\models\ExampleModel;
 use yii\helpers\Html;
-use unclead\widgets\MultipleInputColumn;
+use unclead\multipleinput\MultipleInputColumn;
 
 // Note: You have to install https://github.com/kartik-v/yii2-widget-datepicker for correct work an example
 use kartik\date\DatePicker;
@@ -24,7 +24,7 @@ use kartik\date\DatePicker;
 <h3>Single column</h3>
 <?php
     echo $form->field($model, 'emails')->widget(MultipleInput::className(), [
-        'limit'  => 6,
+        'max'  => 6,
         'allowEmptyList' => false,
         'columns' => [
             [
@@ -47,7 +47,7 @@ use kartik\date\DatePicker;
 <h3>Multiple columns</h3>
 <?php
 echo $form->field($model, 'schedule')->widget(MultipleInput::className(), [
-    'limit' => 4,
+    'max' => 4,
     'allowEmptyList' => true,
     'rowOptions' => function($model) {
         $options = [];
@@ -164,8 +164,9 @@ $js = <<< JS
             console.log(item);
             console.log('calls on before remove row event');
             return confirm('Are you sure you want to delete row?')
-        }).on('afterDeleteRow', function(){
+        }).on('afterDeleteRow', function(e, item){       
             console.log('calls on after remove row event');
+            console.log('User_id:' + item.find('.list-cell__user_id').find('select').first().val());
         });
 JS;
 

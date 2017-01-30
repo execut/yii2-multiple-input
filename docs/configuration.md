@@ -4,7 +4,7 @@ Widget support the following options that are additionally recognized over and a
 
 ##Base options
 
-**limit** *integer*: rows limit. If not set will defaul to unlimited
+**max** *integer*: maximum number of rows. If not set will default to unlimited
 
 **min** *integer*: minimum number of rows. Set to `0` if you need the empty list in case you don't have any data
 
@@ -25,7 +25,10 @@ This can be `MultipleInput::POS_HEADER`, `MultipleInput::POS_ROW` or `MultipleIn
 **allowEmptyList** *boolean*: whether to allow the empty list
 
 **columnClass** *string*: the name of column class. You can specify your own class to extend base functionality.
-Defaults to `unclead\widgets\MultipleInputColumn` for `MultipleInput` and `unclead\widgets\TabularColumn` for `TabularInput`.
+Defaults to `unclead\multipleinput\MultipleInputColumn` for `MultipleInput` and `unclead\multipleinput\TabularColumn` for `TabularInput`.
+
+**rendererClass** *string*: the name of renderer class. You can specify your own class to extend base functionality.
+Defaults to `unclead\multipleinput\renderers\TableRenderer`.
 
 **columns** *array*: the row columns configuration where you can set the properties which is described below
 

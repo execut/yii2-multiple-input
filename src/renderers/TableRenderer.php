@@ -6,18 +6,17 @@
  * @license https://github.com/unclead/yii2-multiple-input/blob/master/LICENSE.md
  */
 
-namespace unclead\widgets\renderers;
+namespace unclead\multipleinput\renderers;
 
 use yii\base\InvalidConfigException;
 use yii\db\ActiveRecordInterface;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
-use unclead\widgets\components\BaseRenderer;
-use unclead\widgets\components\BaseColumn;
+use unclead\multipleinput\components\BaseColumn;
 
 /**
  * Class TableRenderer
- * @package unclead\widgets\renderers
+ * @package unclead\multipleinput\renderers
  */
 class TableRenderer extends BaseRenderer
 {
@@ -40,7 +39,7 @@ class TableRenderer extends BaseRenderer
 
         $content = Html::tag('table', implode("\n", $content), $options);
 
-        return Html::tag( 'div', $content, [
+        return Html::tag('div', $content, [
             'id' => $this->id,
             'class' => 'multiple-input'
         ]);
@@ -59,8 +58,8 @@ class TableRenderer extends BaseRenderer
             $cells[] = $this->renderHeaderCell($column);
         }
 
-        if ($this->limit === null || ($this->limit >= 1 && $this->limit !== $this->min)) {
-            $button = $this->min === 0 || $this->isAddButtonPositionHeader() ? $this->renderAddButton() : '';
+        if ($this->max === null || ($this->max >= 1 && $this->max !== $this->min)) {
+            $button = $this->isAddButtonPositionHeader() ? $this->renderAddButton() : '';
 
             $cells[] = Html::tag('th', $button, [
                 'class' => 'list-cell__button'
@@ -141,8 +140,8 @@ class TableRenderer extends BaseRenderer
 
         if ($this->data) {
             $cnt = count($this->data);
-            if ($this->min === $this->limit && $cnt < $this->limit) {
-                $cnt = $this->limit;
+            if ($this->min === $this->max && $cnt < $this->max) {
+                $cnt = $this->max;
             }
             
             $indices = array_keys($this->data);
@@ -184,7 +183,7 @@ class TableRenderer extends BaseRenderer
             }
         }
 
-        if ($this->limit !== $this->min) {
+        if ($this->max !== $this->min) {
             $cells[] = $this->renderActionColumn($index);
         }
 

@@ -6,17 +6,17 @@
  * @license https://github.com/unclead/yii2-multiple-input/blob/master/LICENSE.md
  */
 
-namespace unclead\widgets;
+namespace unclead\multipleinput;
 
 use yii\base\InvalidConfigException;
 use yii\base\Model;
 use yii\db\ActiveRecordInterface;
 use yii\helpers\Html;
-use unclead\widgets\components\BaseColumn;
+use unclead\multipleinput\components\BaseColumn;
 
 /**
  * Class MultipleInputColumn
- * @package unclead\widgets
+ * @package unclead\multipleinput
  */
 class MultipleInputColumn extends BaseColumn
 {
@@ -49,13 +49,20 @@ class MultipleInputColumn extends BaseColumn
         if (is_null($index)) {
             $index = '{' . $this->renderer->getIndexPlaceholder() . '}';
         }
-        
+
         $elementName = $this->isRendererHasOneColumn()
             ? '[' . $this->name . '][' . $index . ']'
             : '[' . $index . '][' . $this->name . ']';
 
-        $prefix = $withPrefix ? $this->getInputNamePrefix() : '';
-        
+        if (!$withPrefix) {
+            return $elementName;
+        }
+
+        $prefix = $this->getInputNamePrefix();
+        if ($this->context->isEmbedded && strpos($prefix, $this->context->name) === false) {
+            $prefix = $this->context->name;
+        }
+
         return  $prefix . $elementName;
     }
 
@@ -131,7 +138,7 @@ class MultipleInputColumn extends BaseColumn
         // Extend options in case of rendering embedded MultipleInput
         // We have to pass to the widget an original model and an attribute to be able get a first error from model
         // for embedded widget.
-        if ($type === MultipleInput::className() && strpos($name, $this->renderer->getIndexPlaceholder()) === false) {
+        if ($type === MultipleInput::className()) {
             $model = $this->context->model;
 
             // in case of embedding level 2 and more
@@ -147,6 +154,12 @@ class MultipleInputColumn extends BaseColumn
 
             $options['model'] = $model;
             $options['attribute'] = $attribute;
+
+            // Remember current name and mark the widget as embedded to prevent
+            // generation of wrong prefix in case when column is associated with AR relation
+            // @see https://github.com/unclead/yii2-multiple-input/issues/92
+            $options['name'] = $name;
+            $options['isEmbedded'] = true;
         }
 
         return parent::renderWidget($type, $name, $value, $options);

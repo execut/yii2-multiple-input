@@ -1,10 +1,10 @@
 <?php
 
 use yii\bootstrap\ActiveForm;
-use unclead\widgets\MultipleInput;
-use unclead\widgets\examples\models\ExampleModel;
+use unclead\multipleinput\MultipleInput;
+use unclead\multipleinput\examples\models\ExampleModel;
 use yii\helpers\Html;
-use unclead\widgets\MultipleInputColumn;
+use unclead\multipleinput\MultipleInputColumn;
 
 
 /* @var $this \yii\web\View */

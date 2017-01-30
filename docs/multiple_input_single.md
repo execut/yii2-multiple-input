@@ -22,8 +22,8 @@ Then we have to use `MultipleInput` widget for rendering form field in the view 
 
 ```php
 use yii\bootstrap\ActiveForm;
-use unclead\widgets\MultipleInput;
-use unclead\widgets\examples\models\ExampleModel;
+use unclead\multipleinput\MultipleInput;
+use unclead\multipleinput\examples\models\ExampleModel;
 use yii\helpers\Html;
 
 /* @var $this \yii\base\View */
@@ -39,14 +39,14 @@ use yii\helpers\Html;
 ]);?>
 
 <?= $form->field($model, 'emails')->widget(MultipleInput::className(), [
-    'limit' => 4,
+    'max' => 4,
  ]);
 ?>
 <?= Html::submitButton('Update', ['class' => 'btn btn-success']);?>
 <?php ActiveForm::end();?>
 ```
 
-Options `limit` means that user able to input only 4 emails
+Options `max` means that user able to input only 4 emails
 
 For validation emails you can use the following code
 

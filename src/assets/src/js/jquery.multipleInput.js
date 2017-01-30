@@ -48,39 +48,57 @@
     };
 
     var defaultOptions = {
+        /**
+         * the ID of widget
+         */
         id: null,
-        // the template of row
+        /**
+         * the ID of related input in case of using widget for an active field
+         */
+        inputId: null,
+        /**
+         * the template of row
+         */
         template: null,
-        // string that collect js templates of widgets which uses in the columns
+        /**
+         * string that collect js templates of widgets which uses in the columns
+         */
         jsTemplates: [],
-        // how many row has to renders
-        limit: 1,
-        // minimum number of rows
+        /**
+         * how many row are allowed to render
+         */
+        max: 1,
+        /**
+         * a minimum number of rows
+         */
         min: 1,
-        attributeOptions: {},
-        indexPlaceholder: 'multiple_index',
-    };
-
-    var defaultAttributeOptions = {
-        enableAjaxValidation: false,
-        validateOnBlur: false,
-        validateOnChange: false,
-        validateOnType: false
+        /**
+         * active form options of attributes
+         */
+        attributes: {},
+        /**
+         * default prefix of a widget's placeholder
+         */
+        indexPlaceholder: 'multiple_index'
     };
 
     var isActiveFormEnabled = false;
 
     var methods = {
         init: function (options) {
+            if (typeof options !== 'object') {
+                console.error('Options must be an object');
+                return;
+            }
+
             var settings = $.extend(true, {}, defaultOptions, options || {}),
                 $wrapper = $('#' + settings.id),
                 form = $wrapper.closest('form'),
-                id = this.selector.replace('#', '');
+                inputId = settings.inputId;
 
             $wrapper.data('multipleInput', {
                 settings: settings,
-                currentIndex: 0,
-                attributeDefaults: {}
+                currentIndex: 0
             });
 
 
@@ -99,28 +117,33 @@
 
             var intervalID = setInterval(function () {
                 if (typeof form.data('yiiActiveForm') === 'object') {
-                    var attribute = form.yiiActiveForm('find', id),
-                        attributeDefaults = [];
+                    var attribute = form.yiiActiveForm('find', inputId),
+                        defaultAttributeOptions = {
+                            enableAjaxValidation: false,
+                            validateOnBlur: false,
+                            validateOnChange: false,
+                            validateOnType: false,
+                            validationDelay: 500
+                        };
 
+                    // fetch default attribute options from active from attribute
                     if (typeof attribute === 'object') {
                         $.each(attribute, function (key, value) {
                             if (['id', 'input', 'container'].indexOf(key) == -1) {
-                                attributeDefaults[key] = value;
+                                defaultAttributeOptions[key] = value;
                             }
                         });
 
-                        form.yiiActiveForm('remove', id);
+                        form.yiiActiveForm('remove', inputId);
                     }
 
-                    var attributeOptions = $.extend({}, defaultAttributeOptions, settings.attributeOptions);
-
-                    $.each(attributeOptions, function (key, value) {
-                        if (typeof attributeDefaults[key] === 'undefined') {
-                            attributeDefaults[key] = value;
-                        }
+                    // append default options to option from settings
+                    $.each(settings.attributes, function (attribute, attributeOptions) {
+                        attributeOptions = $.extend({}, defaultAttributeOptions, attributeOptions);
+                        settings.attributes[attribute] = attributeOptions;
                     });
 
-                    $wrapper.data('multipleInput').attributeDefaults = attributeDefaults;
+                    $wrapper.data('multipleInput').settings = settings;
 
                     $wrapper.find('.multiple-input-list').find('input, select, textarea').each(function () {
                         addAttribute($(this));
@@ -138,7 +161,7 @@
                 // wait for initialization of ActiveForm a second
                 // If after a second system could not detect ActiveForm it means
                 // that widget is used without ActiveForm and we should just complete initialization of the widget
-                if (i > 10) {
+                if (form.length === 0 || i > 10) {
                     $wrapper.data('multipleInput').currentIndex = getCurrentIndex($wrapper);
                     isActiveFormEnabled = false;
 
@@ -154,7 +177,7 @@
 
         remove: function (index) {
             var row = null;
-            if (index) {
+            if (index != undefined) {
                 row = $(this).find('.js-input-remove:eq(' + index + ')');
             } else {
                 row = $(this).find('.js-input-remove').last();
@@ -167,6 +190,23 @@
             $('.js-input-remove').each(function () {
                 removeInput($(this));
             });
+        },
+
+        option: function(name, value) {
+            value = value || null;
+
+            var data = $(this).data('multipleInput'),
+                settings = data.settings;
+            if (value === null) {
+                if (!settings.hasOwnProperty(name)) {
+                    throw new Error('Option "' + name + '" does not exist');
+                }
+                return settings[name];
+            } else if (settings.hasOwnProperty(name)) {
+                settings[name] = value;
+                data.settings = settings;
+                $(this).data('multipleInput', data);
+            }
         }
     };
 
@@ -177,7 +217,7 @@
             template = settings.template,
             inputList = $wrapper.children('.multiple-input-list').first();
 
-        if (settings.limit != null && getCurrentIndex($wrapper) >= settings.limit) {
+        if (settings.max != null && getCurrentIndex($wrapper) >= settings.max) {
             return;
         }
 
@@ -268,7 +308,7 @@
                 $(this).remove();
 
                 event = $.Event(events.afterDeleteRow);
-                $wrapper.trigger(event);
+                $wrapper.trigger(event, [$toDelete]);
             });
         }
     };
@@ -301,9 +341,10 @@
             return;
         }
 
-
         var data = wrapper.data('multipleInput');
-        form.yiiActiveForm('add', $.extend({}, data.attributeDefaults, {
+        var bareID = id.replace(/-\d/, '').replace(/-\d-/, '');
+
+        form.yiiActiveForm('add', $.extend({}, data.settings.attributes[bareID], {
             'id': id,
             'input': '#' + id,
             'container': '.field-' + id

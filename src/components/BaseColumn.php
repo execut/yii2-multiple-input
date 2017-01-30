@@ -6,7 +6,7 @@
  * @license https://github.com/unclead/yii2-multiple-input/blob/master/LICENSE.md
  */
 
-namespace unclead\widgets\components;
+namespace unclead\multipleinput\components;
 
 use Closure;
 use yii\base\InvalidConfigException;
@@ -16,11 +16,12 @@ use yii\db\ActiveRecordInterface;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Inflector;
+use unclead\multipleinput\renderers\BaseRenderer;
 
 /**
  * Class BaseColumn.
  *
- * @package unclead\widgets\components
+ * @package unclead\multipleinput\components
  */
 abstract class BaseColumn extends Object
 {
@@ -109,6 +110,15 @@ abstract class BaseColumn extends Object
      * @var mixed the context of using a column. It is an instance of widget(MultipleInput or TabularInput).
      */
     public $context;
+
+    /**
+     * @var array client-side options of the attribute, e.g. enableAjaxValidation.
+     * You can use this property for custom configuration of the column (attribute).
+     * By default, the column will use options which are defined on widget level.
+     *
+     * @since 2.1
+     */
+    public $attributeOptions = [];
     
     /**
      * @var Model|ActiveRecordInterface|array
@@ -179,6 +189,7 @@ abstract class BaseColumn extends Object
         if ($this->value instanceof \Closure) {
             $value = call_user_func($this->value, $data);
         } else {
+            $value = null;
             if ($data instanceof ActiveRecordInterface ) {
                 $value = $data->getAttribute($this->name);
             } elseif ($data instanceof Model) {
@@ -187,11 +198,18 @@ abstract class BaseColumn extends Object
                 $value = ArrayHelper::getValue($data, $this->name, null);
             } elseif(is_string($data) || is_numeric($data)) {
                 $value = $data;
-            }else {
+            }
+
+            if ($this->isEmpty($value) && $this->defaultValue !== null) {
                 $value = $this->defaultValue;
             }
         }
         return $value;
+    }
+
+    protected function isEmpty($value)
+    {
+        return $value === null || $value === [] || $value === '';
     }
 
     /**
@@ -468,6 +486,7 @@ abstract class BaseColumn extends Object
     {
         $model = $this->getModel();
         if ($model instanceof Model) {
+            $model->{$this->name} = $value;
             $widgetOptions = [
                 'model'     => $model,
                 'attribute' => $this->name,

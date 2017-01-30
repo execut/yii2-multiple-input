@@ -6,9 +6,10 @@
  * @license https://github.com/unclead/yii2-multiple-input/blob/master/LICENSE.md
  */
 
-namespace unclead\widgets\components;
+namespace unclead\multipleinput\renderers;
 
 use Yii;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Json;
 use yii\base\InvalidConfigException;
@@ -17,20 +18,18 @@ use yii\base\NotSupportedException;
 use yii\base\Object;
 use yii\db\ActiveRecordInterface;
 use yii\web\View;
-use unclead\widgets\MultipleInput;
-use unclead\widgets\TabularInput;
-use unclead\widgets\assets\MultipleInputAsset;
+use yii\widgets\ActiveForm;
+use unclead\multipleinput\MultipleInput;
+use unclead\multipleinput\TabularInput;
+use unclead\multipleinput\assets\MultipleInputAsset;
+use unclead\multipleinput\components\BaseColumn;
 
 /**
  * Class BaseRenderer
- * @package unclead\widgets\components
+ * @package unclead\multipleinput\renderers
  */
-abstract class BaseRenderer extends Object
+abstract class BaseRenderer extends Object implements RendererInterface
 {
-    const POS_HEADER    = 'header';
-    const POS_ROW       = 'row';
-    const POS_FOOTER    = 'footer';
-
     /**
      * @var string the ID of the widget
      */
@@ -47,9 +46,9 @@ abstract class BaseRenderer extends Object
     public $columns = [];
 
     /**
-     * @var int inputs limit
+     * @var int maximum number of rows
      */
-    public $limit;
+    public $max;
 
     /**
      * @var int minimum number of rows.
@@ -114,9 +113,14 @@ abstract class BaseRenderer extends Object
      * @var string
      */
     private $indexPlaceholder;
-    
+
     /**
-     * @param $context
+     * @var ActiveForm the instance of `ActiveForm` class.
+     */
+    public $form;
+
+    /**
+     * @inheritdoc
      */
     public function setContext($context)
     {
@@ -128,7 +132,7 @@ abstract class BaseRenderer extends Object
         parent::init();
 
         $this->prepareMinOption();
-        $this->prepareLimit();
+        $this->prepareMaxOption();
         $this->prepareColumnClass();
         $this->prepareButtons();
         $this->prepareIndexPlaceholder();
@@ -167,24 +171,27 @@ abstract class BaseRenderer extends Object
         }
     }
 
-    private function prepareLimit()
+    private function prepareMaxOption()
     {
-        if ($this->limit === null) {
-            $this->limit = PHP_INT_MAX;
+        if ($this->max === null) {
+            $this->max = PHP_INT_MAX;
         }
 
-        if ($this->limit < 1) {
-            $this->limit = 1;
+        if ($this->max < 1) {
+            $this->max = 1;
         }
 
         // Maximum number of rows cannot be less then minimum number.
-        if ($this->limit < $this->min) {
-            $this->limit = $this->min;
+        if ($this->max < $this->min) {
+            $this->max = $this->min;
         }
     }
 
     private function prepareButtons()
     {
+        if ($this->addButtonPosition === null || $this->addButtonPosition === []) {
+            $this->addButtonPosition = $this->min === 0 ? self::POS_HEADER : self::POS_ROW;
+        }
         if (!is_array($this->addButtonPosition)) {
             $this->addButtonPosition = (array) $this->addButtonPosition;
         }
@@ -221,6 +228,14 @@ abstract class BaseRenderer extends Object
                 'context'   => $this->context
             ], $column);
 
+            if (!is_array($this->addButtonOptions)) {
+                $this->addButtonOptions = [$this->addButtonOptions];
+            }
+
+            if (!array_key_exists('attributeOptions', $definition)) {
+                $definition['attributeOptions'] = $this->attributeOptions;
+            }
+
             $this->columns[$i] = Yii::createObject($definition);
         }
     }
@@ -248,18 +263,38 @@ abstract class BaseRenderer extends Object
     {
         $view = $this->context->getView();
         MultipleInputAsset::register($view);
-        
-        $jsBefore = $this->collectJsTemplates();
+
+        $view = $this->context->getView();
+
+        $jsBefore= [];
+        if (is_array($view->js) && array_key_exists(View::POS_READY, $view->js)) {
+            foreach ($view->js[View::POS_READY] as $key => $js) {
+                $jsBefore[$key] = $js;
+            }
+        }
+
         $template = $this->prepareTemplate();
-        $jsTemplates = $this->collectJsTemplates($jsBefore);
+
+        $jsTemplates = [];
+        if (is_array($view->js) && array_key_exists(View::POS_READY, $view->js)) {
+            foreach ($view->js[View::POS_READY] as $key => $js) {
+                if (array_key_exists($key, $jsBefore)) {
+                    continue;
+                }
+
+                $jsTemplates[$key] = $js;
+                unset($view->js[View::POS_READY][$key]);
+            }
+        }
 
         $options = Json::encode([
             'id'                => $this->id,
+            'inputId'           => $this->context->options['id'],
             'template'          => $template,
             'jsTemplates'       => $jsTemplates,
-            'limit'             => $this->limit,
+            'max'               => $this->max,
             'min'               => $this->min,
-            'attributeOptions'  => $this->attributeOptions,
+            'attributes'        => $this->prepareJsAttributes(),
             'indexPlaceholder'  => $this->getIndexPlaceholder()
         ]);
 
@@ -271,25 +306,6 @@ abstract class BaseRenderer extends Object
      * @return string
      */
     abstract protected function prepareTemplate();
-
-
-    protected function collectJsTemplates($except = [])
-    {
-        $view = $this->context->getView();
-        $output = [];
-        if (is_array($view->js) && array_key_exists(View::POS_READY, $view->js)) {
-            foreach ($view->js[View::POS_READY] as $key => $js) {
-                if (array_key_exists($key, $except)) {
-                    continue;
-                }
-                if (preg_match('/^[^{]+{' . $this->getIndexPlaceholder() . '}.*$/m', $js) === 1) {
-                    $output[$key] = $js;
-                    unset($view->js[View::POS_READY][$key]);
-                }
-            }
-        }
-        return $output;
-    }
 
     /**
      * @return mixed
@@ -326,5 +342,38 @@ abstract class BaseRenderer extends Object
     private function prepareIndexPlaceholder()
     {
         $this->indexPlaceholder = 'multiple_index_' . $this->id;
+    }
+
+    /**
+     * Prepares attributes options for client side.
+     *
+     * @return array
+     */
+    protected function prepareJsAttributes()
+    {
+        $attributes = [];
+        foreach ($this->columns as $column) {
+            $model = $column->getModel();
+            $inputID = str_replace(['-0', '-0-'], '', $column->getElementId(0));
+            if ($this->form instanceof ActiveForm && $model instanceof Model) {
+                $field = $this->form->field($model, $column->name);
+                foreach ($column->attributeOptions as $name => $value) {
+                    if ($field->hasProperty($name)) {
+                        $field->$name = $value;
+                    }
+                }
+                $field->render('');
+                $attributeOptions = array_pop($this->form->attributes);
+                if (isset($attributeOptions['name']) && $attributeOptions['name'] === $column->name) {
+                    $attributes[$inputID] = ArrayHelper::merge($attributeOptions, $column->attributeOptions);
+                } else {
+                    array_push($this->form->attributes, $attributeOptions);
+                }
+            } else {
+                $attributes[$inputID] = $column->attributeOptions;
+            }
+        }
+
+        return $attributes;
     }
 }

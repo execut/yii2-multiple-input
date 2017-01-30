@@ -8,7 +8,7 @@ Yii2 widget for handle multiple inputs for an attribute of model and tabular inp
 [![License](https://poser.pugx.org/unclead/yii2-multiple-input/license)](https://packagist.org/packages/unclead/yii2-multiple-input)
 
 ##Latest release
-The latest stable version of the extension is v1.3.1. Follow the [instruction](./UPGRADE.md) for upgrading from previous versions
+The latest stable version of the extension is v2.3.0 Follow the [instruction](./UPGRADE.md) for upgrading from previous versions
 
 ##Installation
 The preferred way to install this extension is through [composer](http://getcomposer.org/download/).
@@ -16,13 +16,13 @@ The preferred way to install this extension is through [composer](http://getcomp
 Either run
 
 ```
-php composer.phar require  unclead/yii2-multiple-input "~1.0"
+php composer.phar require  unclead/yii2-multiple-input "~2.0"
 ```
 
 or add
 
 ```
-"unclead/yii2-multiple-input": "~1.0"
+"unclead/yii2-multiple-input": "~2.0"
 ```
 
 to the require section of your `composer.json` file.
@@ -35,16 +35,16 @@ For example you want to have an ability of entering several emails of user on pr
 In this case you can use yii2-multiple-input widget like in the following code
 
 ```php
-use unclead\widgets\MultipleInput;
+use unclead\multipleinput\MultipleInput;
 
 ...
 
 <?php
     echo $form->field($model, 'emails')->widget(MultipleInput::className(), [
-        'limit'             => 6,
+        'max'               => 6,
+        'min'               => 2, // should be at least 2 rows
         'allowEmptyList'    => false,
         'enableGuessTitle'  => true,
-        'min'               => 2, // should be at least 2 rows
         'addButtonPosition' => MultipleInput::POS_HEADER // show add button in the header
     ])
     ->label(false);

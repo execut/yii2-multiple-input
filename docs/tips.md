@@ -7,6 +7,7 @@
  - [Use of a widget's placeholder](#using-placeholder)
  - [Custom index of the row](#custom-index)
  - [Embedded MultipleInput widget](#embedded)
+ - [Client validation](#client-validation)
 
 ##How to customize buttons
 
@@ -16,7 +17,7 @@ how you can use those options:
 ```php
 
     echo $form->field($model, 'emails')->widget(MultipleInput::className(), [
-        'limit' => 5,
+        'max' => 5,
         'addButtonOptions' => [
             'class' => 'btn btn-success',
             'label' => 'add' // also you can use html code
@@ -36,7 +37,7 @@ In some cases you need to have the ability to delete all rows in the list. For t
 ```php
 
     echo $form->field($model, 'emails')->widget(MultipleInput::className(), [
-        'limit' => 5,
+        'max' => 5,
         'allowEmptyList' => true
     ])
     ->label(false);
@@ -53,7 +54,7 @@ In this case you can use `enableGuessTitle` option like in the example below:
 ```php
 
     echo $form->field($model, 'emails')->widget(MultipleInput::className(), [
-        'limit' => 5,
+        'max' => 5,
         'allowEmptyList' => true,
         'enableGuessTitle' => true
     ])
@@ -182,3 +183,49 @@ echo MultipleInput::widget([
 ```
 
 But in this case you have to pass `attributeOptions` to the widget otherwise you will not be able to use ajax or client side validation of data.
+
+### Client validation
+
+Apart of ajax validation you can use client validation but in this case you MUST set property `form`.
+Also ensure that you set `enableClientValidation` to `true` value in property `attributeOptions`. If you want to use client validation
+for particular column you can use `attributeOptions` property for this column. An example of using client validation is listed below:
+
+```php
+<?= TabularInput::widget([
+    'models' => $models,
+    'form' => $form,
+    'attributeOptions' => [
+        'enableAjaxValidation' => true,
+        'enableClientValidation' => false,
+        'validateOnChange' => false,
+        'validateOnSubmit' => true,
+        'validateOnBlur' => false,
+    ],
+    'columns' => [
+        [
+            'name' => 'id',
+            'type' => TabularColumn::TYPE_HIDDEN_INPUT
+        ],
+        [
+            'name' => 'title',
+            'title' => 'Title',
+            'type' => TabularColumn::TYPE_TEXT_INPUT,
+            'attributeOptions' => [
+                'enableClientValidation' => true,
+                'validateOnChange' => true,
+            ],
+            'enableError' => true
+        ],
+        [
+            'name' => 'description',
+            'title' => 'Description',
+        ],
+    ],
+]) ?>
+
+```
+
+In the example above we use client validation for column `title` and ajax validation for column `description`.
+As you can noticed we also enabled `validateOnChange` for column `title` thus you can use all client-side options from the `ActiveField` class.
+
+

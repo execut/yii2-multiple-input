@@ -6,13 +6,18 @@
  * @license https://github.com/unclead/yii2-multiple-input/blob/master/LICENSE.md
  */
 
-namespace unclead\widgets;
+namespace unclead\multipleinput;
 
 use Yii;
+use yii\base\InvalidConfigException;
 use yii\base\Model;
+use yii\helpers\ArrayHelper;
+use yii\helpers\Html;
+use yii\widgets\ActiveForm;
 use yii\widgets\InputWidget;
 use yii\db\ActiveRecordInterface;
-use unclead\widgets\renderers\TableRenderer;
+use unclead\multipleinput\renderers\TableRenderer;
+use unclead\multipleinput\renderers\RendererInterface;
 
 
 /**
@@ -22,9 +27,9 @@ use unclead\widgets\renderers\TableRenderer;
  */
 class MultipleInput extends InputWidget
 {
-    const POS_HEADER    = TableRenderer::POS_HEADER;
-    const POS_ROW       = TableRenderer::POS_ROW;
-    const POS_FOOTER    = TableRenderer::POS_FOOTER;
+    const POS_HEADER    = RendererInterface::POS_HEADER;
+    const POS_ROW       = RendererInterface::POS_ROW;
+    const POS_FOOTER    = RendererInterface::POS_FOOTER;
 
     /**
      * @var ActiveRecordInterface[]|array[] input data
@@ -37,9 +42,9 @@ class MultipleInput extends InputWidget
     public $columns = [];
 
     /**
-     * @var integer inputs limit
+     * @var integer maximum number of rows
      */
-    public $limit;
+    public $max;
 
     /**
      * @var array client-side attribute options, e.g. enableAjaxValidation. You may use this property in case when
@@ -74,9 +79,9 @@ class MultipleInput extends InputWidget
     public $min;
 
     /**
-     * @var string|array position of add button. By default button is rendered in the row.
+     * @var string|array position of add button.
      */
-    public $addButtonPosition = self::POS_ROW;
+    public $addButtonPosition;
 
     /**
      * @var array|\Closure the HTML attributes for the table body rows. This can be either an array
@@ -96,9 +101,27 @@ class MultipleInput extends InputWidget
 
     /**
      * @var string the name of column class. You can specify your own class to extend base functionality.
-     * Defaults to `unclead\widgets\MultipleInputColumn`
+     * Defaults to `unclead\multipleinput\MultipleInputColumn`
      */
     public $columnClass;
+
+    /**
+     * @var string the name of renderer class. Defaults to `unclead\multipleinput\renderers\TableRenderer`.
+     * @since 1.4
+     */
+    public $rendererClass;
+
+    /**
+     * @var bool whether the widget is embedded or not.
+     * @internal this property is used for internal purposes. Do not use it in your code. 
+     */
+    public $isEmbedded;
+
+    /**
+     * @var ActiveForm an instance of ActiveForm which you have to pass in case of using client validation
+     * @since 2.1
+     */
+    public $form;
 
     /**
      * Initialization.
@@ -107,8 +130,13 @@ class MultipleInput extends InputWidget
      */
     public function init()
     {
+        if ($this->form !== null && !$this->form instanceof ActiveForm) {
+            throw new InvalidConfigException('Property "form" must be an instance of yii\widgets\ActiveForm');
+        }
+
         $this->guessColumns();
         $this->initData();
+
         parent::init();
     }
 
@@ -127,7 +155,11 @@ class MultipleInput extends InputWidget
         }
 
         if ($this->model instanceof Model) {
-            foreach ((array)$this->model->{$this->attribute} as $index => $value) {
+            $data = $this->model->hasProperty($this->attribute)
+                ? ArrayHelper::getValue($this->model, $this->attribute, [])
+                : [];
+
+            foreach ((array) $data as $index => $value) {
                 $this->data[$index] = $value;
             }
         }
@@ -157,7 +189,15 @@ class MultipleInput extends InputWidget
      */
     public function run()
     {
-        return $this->createRenderer()->render();
+        $content = '';
+        if ($this->hasModel()) {
+            $content .= Html::hiddenInput(Html::getInputName($this->model, $this->attribute), null, [
+                'id' => Html::getInputId($this->model, $this->attribute)
+            ]);
+        }
+        $content .= $this->createRenderer()->render();
+
+        return $content;
     }
 
     /**
@@ -166,27 +206,30 @@ class MultipleInput extends InputWidget
     private function createRenderer()
     {
         $config = [
-            'id'                => $this->options['id'],
+            'id'                => $this->getId(),
             'columns'           => $this->columns,
-            'limit'             => $this->limit,
+            'min'               => $this->min,
+            'max'               => $this->max,
             'attributeOptions'  => $this->attributeOptions,
             'data'              => $this->data,
             'columnClass'       => $this->columnClass !== null ? $this->columnClass : MultipleInputColumn::className(),
             'allowEmptyList'    => $this->allowEmptyList,
-            'min'               => $this->min,
             'addButtonPosition' => $this->addButtonPosition,
             'rowOptions'        => $this->rowOptions,
             'context'           => $this,
+            'form'              => $this->form
         ];
 
-        if (!is_null($this->removeButtonOptions)) {
+        if ($this->removeButtonOptions !== null) {
             $config['removeButtonOptions'] = $this->removeButtonOptions;
         }
 
-        if (!is_null($this->addButtonOptions)) {
+        if ($this->addButtonOptions !== null) {
             $config['addButtonOptions'] = $this->addButtonOptions;
         }
 
-        return new TableRenderer($config);
+        $config['class'] = $this->rendererClass ?: TableRenderer::className();
+
+        return Yii::createObject($config);
     }
 }

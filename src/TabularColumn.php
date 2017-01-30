@@ -6,14 +6,14 @@
  * @license https://github.com/unclead/yii2-multiple-input/blob/master/LICENSE.md
  */
 
-namespace unclead\widgets;
+namespace unclead\multipleinput;
 
-use unclead\widgets\components\BaseColumn;
+use unclead\multipleinput\components\BaseColumn;
 use yii\base\Model;
 
 /**
  * Class TabularColumn
- * @package unclead\widgets
+ * @package unclead\multipleinput
  */
 class TabularColumn extends BaseColumn
 {

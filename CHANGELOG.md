@@ -1,8 +1,52 @@
 Yii2 multiple input change log
 ==============================
 
-1.3.2 in development
---------------------
+2.3.0
+=====
+
+- #107: render a hidden input when `MultipleInput` is used for active field
+- #109: respect ID when using a widget's placeholder
+
+2.2.0
+=====
+
+- #104: Fixed preparation of js attributes (Choate, unclead)
+- Fixed removal of row with index 0 via js api method (pvlg)
+
+
+2.1.1
+=====
+
+- Enh: Passing a deleted row to the event
+
+2.1.0
+=====
+
+- Enh #37: Support of client validation
+
+2.0.1
+=====
+
+- Bug #105: Change vendor name in namespace from yii to unclead to respect Yii recommendations
+
+2.0.0
+=====
+
+- Renamed `limit` option to `max`
+- Changed namespace from `unclead\widgets` to `yii\multipleinput`
+- #92: Adjustments for correct work with AR relations
+- Enh #104: Added method to set value of an particular option
+
+1.4.1
+=====
+
+- #99: Respect "defaultValue" if it is set and current value is empty (unclead)
+
+1.4.0
+-----
+
+- #94: added ability to set custom renderer (unclead, bokodi-dev)
+- #97: Respect `addButtonPosition` when rendering the button (unclead)
 
 1.3.1
 -----

@@ -6,24 +6,26 @@
  * @license https://github.com/unclead/yii2-multiple-input/blob/master/LICENSE.md
  */
 
-namespace unclead\widgets;
+namespace unclead\multipleinput;
 
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\base\Model;
 use yii\db\ActiveRecordInterface;
 use yii\bootstrap\Widget;
-use unclead\widgets\renderers\TableRenderer;
+use yii\widgets\ActiveForm;
+use unclead\multipleinput\renderers\TableRenderer;
+use unclead\multipleinput\renderers\RendererInterface;
 
 /**
  * Class TabularInput
- * @package unclead\widgets
+ * @package unclead\multipleinput
  */
 class TabularInput extends Widget
 {
-    const POS_HEADER    = TableRenderer::POS_HEADER;
-    const POS_ROW       = TableRenderer::POS_ROW;
-    const POS_FOOTER    = TableRenderer::POS_FOOTER;
+    const POS_HEADER    = RendererInterface::POS_HEADER;
+    const POS_ROW       = RendererInterface::POS_ROW;
+    const POS_FOOTER    = RendererInterface::POS_FOOTER;
 
     /**
      * @var array
@@ -31,9 +33,9 @@ class TabularInput extends Widget
     public $columns = [];
 
     /**
-     * @var integer inputs limit
+     * @var integer maximum number of rows
      */
-    public $limit;
+    public $max;
 
     /**
      * @var int minimum number of rows
@@ -68,9 +70,9 @@ class TabularInput extends Widget
     public $models;
 
     /**
-     * @var string|array position of add button. By default button is rendered in the row.
+     * @var string|array position of add button.
      */
-    public $addButtonPosition = self::POS_ROW;
+    public $addButtonPosition;
 
     /**
      * @var array|\Closure the HTML attributes for the table body rows. This can be either an array
@@ -91,9 +93,21 @@ class TabularInput extends Widget
 
     /**
      * @var string the name of column class. You can specify your own class to extend base functionality.
-     * Defaults to `unclead\widgets\TabularColumn`
+     * Defaults to `unclead\multipleinput\TabularColumn`
      */
     public $columnClass;
+
+    /**
+     * @var string the name of renderer class. Defaults to `unclead\multipleinput\renderers\TableRenderer`.
+     * @since 1.4
+     */
+    public $rendererClass;
+
+    /**
+     * @var ActiveForm an instance of ActiveForm which you have to pass in case of using client validation
+     * @since 2.1
+     */
+    public $form;
 
     /**
      * Initialization.
@@ -104,6 +118,10 @@ class TabularInput extends Widget
     {
         if (empty($this->models)) {
             throw new InvalidConfigException('You must specify "models"');
+        }
+
+        if ($this->form !== null && !$this->form instanceof ActiveForm) {
+            throw new InvalidConfigException('Property "form" must be an instance of yii\widgets\ActiveForm');
         }
 
         foreach ($this->models as $model) {
@@ -129,27 +147,34 @@ class TabularInput extends Widget
     private function createRenderer()
     {
         $config = [
-            'id'                => $this->options['id'],
+            'id'                => $this->getId(),
             'columns'           => $this->columns,
-            'limit'             => $this->limit,
+            'min'               => $this->min,
+            'max'               => $this->max,
             'attributeOptions'  => $this->attributeOptions,
             'data'              => $this->models,
             'columnClass'       => $this->columnClass !== null ? $this->columnClass : TabularColumn::className(),
             'allowEmptyList'    => $this->allowEmptyList,
-            'min'               => $this->min,
             'rowOptions'        => $this->rowOptions,
             'addButtonPosition' => $this->addButtonPosition,
             'context'           => $this,
+            'form'              => $this->form
         ];
 
-        if (!is_null($this->removeButtonOptions)) {
+        if ($this->removeButtonOptions !== null) {
             $config['removeButtonOptions'] = $this->removeButtonOptions;
         }
 
-        if (!is_null($this->addButtonOptions)) {
+        if ($this->addButtonOptions !== null) {
             $config['addButtonOptions'] = $this->addButtonOptions;
         }
 
-        return new TableRenderer($config);
+        if (!$this->rendererClass) {
+            $this->rendererClass = TableRenderer::className();
+        }
+
+        $config['class'] = $this->rendererClass ?: TableRenderer::className();
+
+        return Yii::createObject($config);
     }
 }
